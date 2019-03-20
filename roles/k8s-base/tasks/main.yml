@@ -1,0 +1,74 @@
+---
+# tasks file for k8s-base
+- name: Remove swapfile from /etc/fstab
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+
+- name: Disable swap
+  command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+
+- name: Disabled SELinux 
+  lineinfile:
+    path: /etc/sysconfig/selinux
+    state: present
+    create: yes
+    line:  "SELINUX=disabled"
+
+- name: Create and input information to kubernetes.repo
+  blockinfile:
+    state: present
+    create: yes
+    path: /etc/yum.repos.d/kubernetes.repo
+    block: |
+      [kubernetes]
+      name=Kubernetes
+      baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+      enabled=1
+      gpgcheck=1
+      repo_gpgcheck=1
+      gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      exclude=kube*
+
+- name: Change SELINUX in /etc/selinux/config
+  lineinfile:
+    state: present
+    create: yes
+    path: /etc/selinux/config
+    line: "SELINUX=permissive"
+
+- name: Install Kubelet Kubeadm Kubectl
+  yum:
+    name: '{{ packages }}'
+    state: latest
+    disable_excludes: kubernetes
+  vars:
+    packages:
+      - kubectl
+      - kubeadm
+      - kubelet
+  notify:
+    - Enable Kubelet  
+
+- name: "modprobe br_netfilter"
+  shell: |
+    modprobe br_netfilter
+    sysctl -p
+  changed_when: no
+
+
+- name: Make changes /etc/sysctl.d/docker.conf
+  blockinfile:
+    path: /etc/sysctl/docker.conf
+    state: present
+    create: yes
+    block: |
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+  changed_when: no
+
+- name: Configure /proc/sys/net/bridge/bridge-nf-call-iptables
+  shell: echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
+  changed_when: no

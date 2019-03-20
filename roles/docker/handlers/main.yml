@@ -1,0 +1,20 @@
+---
+# handlers file for docker
+- name: Start and Enabled docker.service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  
+- name: Collect fact about Docker version
+  shell: docker version | awk '{print $2}' | grep "[0-9]" -m 1
+  register: docker_version
+  changed_when: no
+
+- name: Add fact about Docker version
+  copy:
+    content: |
+      {
+        "Docker version" : "{{ docker_version }}"
+      }
+    dest: /etc/ansible/facts.d/docker.fact

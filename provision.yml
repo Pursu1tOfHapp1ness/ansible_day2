@@ -1,0 +1,37 @@
+- hosts: nodes
+  become: yes
+
+  pre_tasks:
+    - name: Check if our hosts are enabled
+      ping:
+                
+  roles:
+    - common
+    - devops_user
+    - docker
+    - k8s-base
+
+
+- hosts: masters
+  become: yes
+  roles:
+    - k8s-master
+
+
+- hosts: workers
+  become: yes
+  roles:
+    - k8s-worker
+
+
+- hosts: masters
+  become: yes
+  post_tasks:
+    - name: Checking if worker-node has role
+      shell: kubectl get nodes | grep -i "worker-node" | awk '{print $3}'
+      register: worker_role
+
+    - name: Join WORKER ROLE to worker-node
+      when: worker_role.stdout != "worker"
+      shell: kubectl label node worker-node node-role.kubernetes.io/worker=worker
+

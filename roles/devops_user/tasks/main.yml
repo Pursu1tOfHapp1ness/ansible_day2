@@ -1,0 +1,22 @@
+---
+# tasks file for devops_user
+- name: Create a login user
+  user:
+    name: devops    
+    password: "{{ 'devops' | password_hash('sha512') }}"
+    state: present
+    update_password: on_create
+
+- name: Set authorized key taken from file
+  authorized_key:
+    user: devops
+    state: present
+    key: "{{ lookup('file', 'devops.pem') }}"
+
+- name: Grant devops necessary system's privilegies
+  lineinfile:
+    dest: /etc/sudoers.d/devops
+    state: present
+    create: yes
+    regexp: "^%devops"
+    line:  "%devops ALL=(ALL) NOPASSWD:ALL"

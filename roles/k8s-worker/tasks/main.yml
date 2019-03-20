@@ -1,0 +1,8 @@
+---
+# tasks file for k8s-worker
+- name: Reset Kubernetes components
+  shell: kubeadm reset --force
+
+- name: Join Worker to Cluster
+  shell:
+    kubeadm join --token $(head -1 /vagrant/token) --discovery-token-unsafe-skip-ca-verification 192.168.56.15:6443 

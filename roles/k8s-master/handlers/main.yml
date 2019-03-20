@@ -1,0 +1,20 @@
+---
+# handlers file for k8s-master
+- name: Initialize Kubernetes Cluster
+  shell: kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address '{{ ansible_enp0s8.ipv4.address }}'
+  
+- name: Create directory
+  file:
+    path: '{{ ansible_user_dir }}/.kube'
+    state: directory
+
+- name: Copy file from /etc/kubernetes/admin.conf to ~/.kube/config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: '{{ ansible_user_dir }}/.kube/config'
+
+- name: Apply and Patch flannel / Create token
+  shell: |
+    kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml
+    kubectl patch daemonsets kube-flannel-ds-amd64 -n kube-system --patch='{"spec":{"template":{"spec":{"containers":[{"name": "kube-flannel", "args": ["--ip-masq", "--kube-subnet-mgr", "--iface='${IPETHX}'"]}]}}}}'
+    kubeadm token list | awk '{ print $1 }'| awk NR==2 > /vagrant/token

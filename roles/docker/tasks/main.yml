@@ -1,0 +1,37 @@
+---
+# tasks file for docker
+- name: Add repo for Docker
+  get_url:
+    dest: /etc/yum.repos.d/docker-ce.repo
+    url:  https://download.docker.com/linux/centos/docker-ce.repo
+  register: docker_repo
+
+- name: Enable Docker-ce-edge
+  ini_file:
+    path: /etc/yum.repos.d/docker-ce.repo
+    section: 'docker-ce-edge'
+    option: enabled
+    value: 0
+    
+- name: Install Docker
+  package:
+    name: docker-ce
+    state: latest
+  when: docker_repo is success
+  notify: 
+    - Start and Enabled docker.service
+    - Collect fact about Docker version
+    - Add fact about Docker version
+      
+- name: Add user devops to docker group
+  user:
+    name: devops
+    groups: docker
+    append: yes
+  
+- name: Add user vagrant to docker group
+  user:
+    name: vagrant
+    groups: docker
+    append: yes
+

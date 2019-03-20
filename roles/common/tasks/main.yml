@@ -1,0 +1,21 @@
+---
+# tasks file for common
+- name: Install needed packages
+  yum:
+    name: '{{ packages }}'
+    state: latest
+  vars:
+    packages:
+      - yum-utils
+      - lvm2
+      - jq
+      - ntp
+      - bind-utils
+      - epel-release
+      - net-tools
+      - deltarpm
+
+- name: Create directory for facts
+  file:
+    state: directory
+    path: /etc/ansible/facts.d

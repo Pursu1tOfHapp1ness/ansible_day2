@@ -1,0 +1,14 @@
+---
+
+- name: Checking for existing Kubernetes Cluster
+  shell: if [ -f /etc/kubernetes/admin.conf ]; then echo 0; else echo 1; fi
+  register: kubectl_exist
+
+- name: Creating Kubernetes Cluster components
+  when: kubectl_exist.stdout  != "0"
+  shell: kubeadm reset --force
+  notify:
+    - Initialize Kubernetes Cluster
+    - Create directory
+    - Copy file from /etc/kubernetes/admin.conf to ~/.kube/config
+    - Apply and Patch flannel / Create token
