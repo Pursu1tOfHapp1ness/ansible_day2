@@ -1,8 +1,11 @@
 ---
 # tasks file for k8s-worker
-- name: Reset Kubernetes components
-  shell: kubeadm reset --force
+- name: Checking, if some files are existed
+  shell: if [ -f /etc/kubernetes/kubelet.conf ]; then echo 0; else echo 1; fi
+  register: kubectl_exist
 
-- name: Join Worker to Cluster
-  shell:
-    kubeadm join --token $(head -1 /vagrant/token) --discovery-token-unsafe-skip-ca-verification 192.168.56.15:6443 
+- name: Reset Kubernetes components
+  when: kubectl_exist.stdout != "0"
+  shell: kubeadm reset --force
+  notify:
+    - Join Worker to Cluster

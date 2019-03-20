@@ -10,6 +10,7 @@
 
 - name: Copy file from /etc/kubernetes/admin.conf to ~/.kube/config
   copy:
+    remote_src: yes
     src: /etc/kubernetes/admin.conf
     dest: '{{ ansible_user_dir }}/.kube/config'
 
